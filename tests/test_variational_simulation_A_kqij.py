@@ -12,5 +12,5 @@ B = 1j*1/2
 fs = [[-J, -J, -J], [-B, -B, -B]]
 params = np.array([1.0, 1.0])
 ops = [["ZZI", "IZZ", "ZIZ"], ["XII", "IXI", "IIX"]]
-k, q, i, j = 1, 0, 1, 0
+k, q, i, j = 0, 1, 2, 2
 A_kqij(params, fs, ops, n_qubits, k, q, i, j)

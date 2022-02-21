@@ -13,11 +13,11 @@ qr_ancilla = QuantumRegister(1, "ancilla") # ancilla register
 cr = ClassicalRegister(1, "cr") # classical register
 qc = QuantumCircuit(qr_data, qr_ancilla, cr)
 # define the parameters of the problem
-J = 1/2
-B = 1/2
+J = 1j*1/2
+B = 1j*1/2
 fs = [[-J, -J, -J], [-B, -B, -B]]
 operators = [["ZZI", "IZZ", "ZIZ"], ["XII", "IXI", "IIX"]]
-param = np.array([1.0, 1.0, 1.0])
+param = np.array([1.0, 1.0])
 # calculate the operation R_k
 k = 0
 R = R_k(param[0], fs[k], operators[k], n_qubits)
