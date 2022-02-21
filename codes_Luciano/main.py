@@ -107,7 +107,7 @@ def VariationalSimulation( R, Uq, Uk, params, steps, shots ):
         circ_par = [ qc.assign_parameters(params) for qc in circ  ]
         job = simulator.run( circ_par , shots=shots )
         dparams = Euler_step( job.result(), shots, n_params, 1 )
-        params += dparams
+        params += dparams /100.
         params_evolved.append( params.copy() )
 
     return params_evolved
