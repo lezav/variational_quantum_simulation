@@ -13,8 +13,8 @@ def A(params, fs, ops, n_qubits):
     """
     N = params.shape[0]
     a = np.zeros((N, N))
-    for k in range(N):
-        for q in range(N):
+    for q in range(N):
+        for k in range(q+1):
             a[k, q] = A_kq(params, fs, ops, n_qubits, k, q)
     return a
 
@@ -80,30 +80,23 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     qc.append(controlled_U, qr_ancilla[:] + qr_data[:])
     qc.barrier()
     # apply R_k...R_N gates
-    for m in range(k, N):
-        R = R_k(params[m], fs[m], ops[m], n_qubits)
-        qc.append(R, qr_data[:])
-    qc.barrier()
-    # Now we want to construct R_qj
-    # apply R_N ...R_q+1
-    for m in range(N-1, q, -1):
+    for m in range(k, q):
         R = R_k(params[m], fs[m], ops[m], n_qubits)
         qc.append(R, qr_data[:])
     qc.barrier()
     qc.x(qr_ancilla)
     # apply the controlled operation for sigma_qj
-    controlled_U = string2U(ops[q][k], n_qubits).control(num_ctrl_qubits=1)
+    controlled_U = string2U(ops[q][j], n_qubits).control(num_ctrl_qubits=1)
     qc.append(controlled_U, qr_ancilla[:] + qr_data[:])
     qc.barrier()
     # apply the operations R_q ...R_1
-    for m in range(q, -1, -1):
-        R = R_k(params[m], fs[m], ops[m], n_qubits)
-        qc.append(R, qr_data[:])
+    R = R_k(params[q], fs[q], ops[q], n_qubits)
+    qc.append(R, qr_data[:])
     qc.barrier()
     # measure in the X basis with a number of shots
     qc.h(qr_ancilla)
     qc.measure(qr_ancilla, cr)
-    # print(qc.draw())
+    print(qc.draw())
     simulator = Aer.get_backend('aer_simulator')
     circ = transpile(qc, simulator)
     result = simulator.run(circ, shots=shots).result()
