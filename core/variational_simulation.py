@@ -5,6 +5,17 @@ from qiskit.circuit import Gate
 from qiskit.circuit.library.standard_gates import *
 from qiskit.quantum_info.operators import Operator, Pauli
 from qiskit.extensions import HamiltonianGate
+from qiskit.quantum_info import Statevector
+
+
+def initial_state(n_qubits):
+    qr_data = QuantumRegister(n_qubits, "data") # data register
+    qc = QuantumCircuit(qr_data)
+    qc.h(qr_data[:])
+    for k in range(n_qubits-1):
+        qc.cp(np.pi, k, k+1)
+    qc.cp(np.pi, k+1, 0)
+    return qc.to_gate(label="in_st")
 
 
 def A(params, fs, ops, n_qubits):
@@ -65,6 +76,7 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     N = params.shape[0]
     a_kiqj = 2*np.abs(1j*np.conjugate(fs[k][i])*fs[q][j])
     theta_kiqj = np.angle(1j*np.conjugate(fs[k][i])*fs[q][j])
+    qc.append(initial_state(n_qubits), qr_data[:])
     qc.h(qr_ancilla)
     qc.p(theta_kiqj, qr_ancilla)
     qc.barrier()
@@ -90,18 +102,20 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     qc.append(controlled_U, qr_ancilla[:] + qr_data[:])
     qc.barrier()
     # apply the operations R_q ...R_1
-    R = R_k(params[q], fs[q], ops[q], n_qubits)
-    qc.append(R, qr_data[:])
+    for m in range(q, N):
+        R = R_k(params[m], fs[m], ops[m], n_qubits)
+        qc.append(R, qr_data[:])
     qc.barrier()
     # measure in the X basis with a number of shots
     qc.h(qr_ancilla)
     qc.measure(qr_ancilla, cr)
     print(qc.draw())
     simulator = Aer.get_backend('aer_simulator')
+    # simulator = Aer.get_backend('statevector_simulator')
     circ = transpile(qc, simulator)
     result = simulator.run(circ, shots=shots).result()
     counts = result.get_counts(circ)
-    # calculate a Re(e^(theta) <0|U|0>)
+    #calculate a Re(e^(theta) <0|U|0>)
     Re_0U0 = (counts["0"] - counts["1"])/shots
     return a_kiqj*Re_0U0
 
@@ -126,8 +140,7 @@ def R_k(params_k, fs_k, ops_k, n_qubits):
     Returns:
         R: Gate.
     """
-    # qr_data = QuantumRegister(n_qubits, "data") # data register
-    # qc = QuantumCircuit(qr_data)
+
     n_k = len(ops_k)
     Ops_k = fs_k[0]*Operator(Pauli(ops_k[0]))
     for j in range(1, n_k):
