@@ -88,8 +88,8 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     qc.barrier()
     # apply the controlled operation for sigma_ki
     qc.x(qr_ancilla)
-    controlled_U = string2U(ops[k][i], n_qubits).control(num_ctrl_qubits=1)
-    qc.append(controlled_U, qr_ancilla[:] + qr_data[:])
+    controlled_Uk = string2U(ops[k][i], n_qubits).control(num_ctrl_qubits=1)
+    qc.append(controlled_Uk, qr_ancilla[:] + qr_data[:])
     qc.barrier()
     # apply R_k...R_N gates
     for m in range(k, q):
@@ -98,8 +98,8 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     qc.barrier()
     qc.x(qr_ancilla)
     # apply the controlled operation for sigma_qj
-    controlled_U = string2U(ops[q][j], n_qubits).control(num_ctrl_qubits=1)
-    qc.append(controlled_U, qr_ancilla[:] + qr_data[:])
+    controlled_Uq = string2U(ops[q][j], n_qubits).control(num_ctrl_qubits=1)
+    qc.append(controlled_Uq, qr_ancilla[:] + qr_data[:])
     qc.barrier()
     # apply the operations R_q ...R_1
     for m in range(q, N):
@@ -112,11 +112,12 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     print(qc.draw())
     simulator = Aer.get_backend('aer_simulator')
     # simulator = Aer.get_backend('statevector_simulator')
-    circ = transpile(qc, simulator)
-    result = simulator.run(circ, shots=shots).result()
-    counts = result.get_counts(circ)
+    qc = transpile(qc, simulator)
+    # print(circ.draw())
+    result = simulator.run(qc, shots=shots).result()
+    counts = result.get_counts(qc)
     #calculate a Re(e^(theta) <0|U|0>)
-    Re_0U0 = (counts["0"] - counts["1"])/shots
+    Re_0U0 = (2*counts["0"]/shots - 1)
     return a_kiqj*Re_0U0
 
 
