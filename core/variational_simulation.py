@@ -14,7 +14,7 @@ def initial_state(n_qubits):
     qc.h(qr_data[:])
     for k in range(n_qubits-1):
         qc.cp(np.pi, k, k+1)
-    qc.cp(np.pi, k+1, 0)
+    qc.cp(np.pi, k + 1, 0)
     return qc.to_gate(label="in_st")
 
 
@@ -74,7 +74,7 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     qc = QuantumCircuit(qr_ancilla, qr_data, cr)
     # preparate the ancilla in the state |0> + e^(theta)|1>
     N = params.shape[0]
-    a_kiqj = 2*np.abs(1j*np.conjugate(fs[k][i])*fs[q][j])
+    a_kiqj = 2*np.abs(np.conjugate(1j*fs[k][i])*fs[q][j])
     theta_kiqj = np.angle(1j*np.conjugate(fs[k][i])*fs[q][j])
     qc.append(initial_state(n_qubits), qr_data[:])
     qc.h(qr_ancilla)
@@ -117,7 +117,7 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     result = simulator.run(qc, shots=shots).result()
     counts = result.get_counts(qc)
     #calculate a Re(e^(theta) <0|U|0>)
-    Re_0U0 = (2*counts["0"]/shots - 1)
+    Re_0U0 = (counts.get("0", 0) - counts.get("1", 0))/shots
     return a_kiqj*Re_0U0
 
 
@@ -145,6 +145,6 @@ def R_k(params_k, fs_k, ops_k, n_qubits):
     n_k = len(ops_k)
     Ops_k = fs_k[0]*Operator(Pauli(ops_k[0]))
     for j in range(1, n_k):
-        Ops_k = fs_k[j]*Operator(Pauli(ops_k[j]))
+        Ops_k += fs_k[j]*Operator(Pauli(ops_k[j]))
 
     return HamiltonianGate(1j*Ops_k , params_k, label="+".join(ops_k))

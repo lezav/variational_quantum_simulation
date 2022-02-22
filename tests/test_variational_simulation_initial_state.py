@@ -13,4 +13,4 @@ qr_ancilla = QuantumRegister(1, "ancilla") # ancilla register
 cr = ClassicalRegister(1, "cr") # classical register
 qc = QuantumCircuit(qr_data, qr_ancilla, cr)
 # define the parameters of the problem
-qc.append(initial_state(n_qubits), qr_data[:])
+np.array(Operator(initial_state(n_qubits)))[:, 0]

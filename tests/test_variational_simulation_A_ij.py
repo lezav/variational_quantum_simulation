@@ -8,4 +8,4 @@ fs = [[-J, -J, -J], [-B, -B, -B]]
 params = np.array([1.0, 0.5])
 ops = [["ZZI", "IZZ", "ZIZ"], ["XII", "IXI", "IIX"]]
 
-A_kq(params, fs, ops, n_qubits, 1, 1)
+A_kq(params, fs, ops, n_qubits, 0, 0)

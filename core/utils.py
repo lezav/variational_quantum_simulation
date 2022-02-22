@@ -17,7 +17,7 @@ def test_R_k(params_k, fs_k, ops_k, n_qubits):
     n_k = len(ops_k)
     Ops_k = fs_k[0]*Pauli(ops_k[0]).to_matrix()
     for j in range(1, n_k):
-        Ops_k = fs_k[j]*Pauli(ops_k[j]).to_matrix()
+        Ops_k += fs_k[j]*Pauli(ops_k[j]).to_matrix()
 
     return scipy.linalg.expm(params_k*Ops_k)
 
@@ -47,8 +47,8 @@ def test_A_kqij(params, fs, ops, n_qubits, k, q, i, j, vector):
         R_ki = r_ki[m]@R_ki
         R_qj = r_qj[m]@R_qj
     a_kqij = (vector.conj().T) @ (((R_ki.conj().T) @ R_qj) @ vector)
-    a_kqij = np.conjugate(fs[k][i])*fs[q][j]*a_kqij
-    a_kqij = (a_kqij + np.conjugate(a_kqij))/2
+    a_kqij = 1j*np.conjugate(fs[k][i])*fs[q][j]*a_kqij
+    a_kqij = (a_kqij + np.conjugate(a_kqij))
     return a_kqij
 
 
