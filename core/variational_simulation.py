@@ -124,7 +124,7 @@ def A_kqij_3qubits(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     return a_kiqj*Re_0U0
 
 
-def controlled_gates(ops, k, i, n_qubits):
+def controlled_gates(ops_ki, k, i, n_qubits):
     qr_data = QuantumRegister(n_qubits, "data") # data register
     qc = QuantumCircuit(qr_data)
     if int(k)==0:
@@ -132,7 +132,7 @@ def controlled_gates(ops, k, i, n_qubits):
         qc.z(qr_data[np.mod(i + 1, 3)])
     else:
         qc.x(qr_data[i])
-    return qc.to_gate(label=ops)
+    return qc.to_gate(label=ops_ki)
 
 
 def string2U(op, n_qubits):
