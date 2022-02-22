@@ -212,7 +212,7 @@ def V_kij(params, fs, hs, ops, opsH, n_qubits, k, i, j, shots=8192):
     # measure in the X basis with a number of shots
     qc.h(qr_ancilla)
     qc.measure(qr_ancilla, cr)
-    print(qc.draw())
+    # print(qc.draw())
     simulator = Aer.get_backend('aer_simulator')
     # simulator = Aer.get_backend('statevector_simulator')
     qc = transpile(qc, simulator)

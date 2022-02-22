@@ -5,7 +5,7 @@ from qiskit.extensions import HamiltonianGate
 from qiskit.circuit.library.standard_gates import *
 from qiskit.quantum_info.operators import Operator, Pauli
 from core.variational_simulation_with_v import A_kqij, V_kij
-from core.utils import test_A_kqij
+from core.utils_with_v_test import test_A_kqij, test_V_kij
 
 
 # n_qubits = 3
@@ -37,16 +37,17 @@ hs = [-2.0*J, -B, -B]
 opsH = ["ZZ", "XI", "IX"]
 
 
-k_a, q_a, i_a, j_a = 1, 1, 0, 0
-vector = np.array([0.5, 0.5, 0.5, 0.5]).reshape(4, 1) +1j*0
+# k_a, q_a, i_a, j_a = 1, 0, 0, 0
+# vector = np.array([0.5, 0.5, 0.5, 0.5]).reshape(4, 1) +1j*0
 # a_kqij = A_kqij(params, fs, ops, n_qubits, k_a, q_a, i_a, j_a)
 # a_kqij_test = test_A_kqij(params, fs, ops, n_qubits, k_a, q_a, i_a, j_a, vector)
 
 # print(a_kqij, a_kqij_test)
 
 
-k_v, i_v, j_v = 1,1,2
+k_v, i_v, j_v = 1,0,1
 vector = np.array([0.5, 0.5, 0.5, 0.5]).reshape(4, 1) +1j*0
 v_kij = V_kij(params, fs, hs, ops, opsH, n_qubits, k_v, i_v, j_v)
+v_kij_test = test_V_kij(params, fs, hs, ops, opsH, n_qubits, k_v, i_v, j_v, vector)
 
-print(v_kij)
+print(v_kij, v_kij_test)
