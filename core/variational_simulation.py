@@ -6,7 +6,7 @@ from qiskit.circuit.library.standard_gates import *
 from qiskit.quantum_info.operators import Operator, Pauli
 from qiskit.extensions import HamiltonianGate
 from qiskit.quantum_info import Statevector
-
+from core.utils import P
 
 def initial_state(n_qubits):
     qr_data = QuantumRegister(n_qubits, "data") # data register
@@ -54,7 +54,7 @@ def A_kq(params, fs, ops, n_qubits, k, q):
     return a_kq
 
 
-def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
+def A_kqij_3qubits(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     """
     Calculate A_kqij = f*_ki f_qj <0|R^dagg_ki R_qj|0> that appear in Eq. (21).
     Args:
@@ -88,7 +88,8 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     qc.barrier()
     # apply the controlled operation for sigma_ki
     qc.x(qr_ancilla)
-    controlled_Uk = string2U(ops[k][i], n_qubits).control(num_ctrl_qubits=1)
+    # controlled_Uk = string2U(ops[k][i], n_qubits).control(1)
+    controlled_Uk = controlled_gates(ops[k][i], k, i, n_qubits).control(1)
     qc.append(controlled_Uk, qr_ancilla[:] + qr_data[:])
     qc.barrier()
     # apply R_k...R_N gates
@@ -98,14 +99,16 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     qc.barrier()
     qc.x(qr_ancilla)
     # apply the controlled operation for sigma_qj
-    controlled_Uq = string2U(ops[q][j], n_qubits).control(num_ctrl_qubits=1)
+    # controlled_Uq = string2U(ops[q][j], n_qubits).control(1)
+    controlled_Uq = controlled_gates(ops[q][j], q, j, n_qubits).control(1)
     qc.append(controlled_Uq, qr_ancilla[:] + qr_data[:])
+    # qc.cx(qr_ancilla, qr_data[0])
     qc.barrier()
-    # apply the operations R_q ...R_1
-    for m in range(q, N):
-        R = R_k(params[m], fs[m], ops[m], n_qubits)
-        qc.append(R, qr_data[:])
-    qc.barrier()
+    # apply the operations R_q ...R_N
+    # for m in range(q, N):
+    #     R = R_k(params[m], fs[m], ops[m], n_qubits)
+    #     qc.append(R, qr_data[:])
+    # qc.barrier()
     # measure in the X basis with a number of shots
     qc.h(qr_ancilla)
     qc.measure(qr_ancilla, cr)
@@ -121,13 +124,24 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     return a_kiqj*Re_0U0
 
 
+def controlled_gates(ops, k, i, n_qubits):
+    qr_data = QuantumRegister(n_qubits, "data") # data register
+    qc = QuantumCircuit(qr_data)
+    if int(k)==0:
+        qc.z(qr_data[np.mod(i, 3)])
+        qc.z(qr_data[np.mod(i + 1, 3)])
+    else:
+        qc.x(qr_data[i])
+    return qc.to_gate(label=ops)
+
+
 def string2U(op, n_qubits):
     """
     Converts from string to gate.
     """
     qr_data = QuantumRegister(n_qubits, "data") # data register
     qc = QuantumCircuit(qr_data)
-    qc.append(Operator(Pauli(op)), qr_data[:])
+    qc.unitary(Operator(P(op)), qr_data[::-1])
     return qc.to_gate(label=op)
 
 
@@ -143,8 +157,8 @@ def R_k(params_k, fs_k, ops_k, n_qubits):
     """
 
     n_k = len(ops_k)
-    Ops_k = fs_k[0]*Operator(Pauli(ops_k[0]))
+    Ops_k = fs_k[0]*Operator(P(ops_k[0]))
     for j in range(1, n_k):
-        Ops_k += fs_k[j]*Operator(Pauli(ops_k[j]))
+        Ops_k += fs_k[j]*Operator(P(ops_k[j]))
 
     return HamiltonianGate(1j*Ops_k , params_k, label="+".join(ops_k))

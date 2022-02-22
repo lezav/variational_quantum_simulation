@@ -15,9 +15,9 @@ def test_R_k(params_k, fs_k, ops_k, n_qubits):
     """
 
     n_k = len(ops_k)
-    Ops_k = fs_k[0]*Pauli(ops_k[0]).to_matrix()
+    Ops_k = fs_k[0]*P(ops_k[0])
     for j in range(1, n_k):
-        Ops_k += fs_k[j]*Pauli(ops_k[j]).to_matrix()
+        Ops_k += fs_k[j]*P(ops_k[j])
 
     return scipy.linalg.expm(params_k*Ops_k)
 
@@ -27,7 +27,7 @@ def test_A_kqij(params, fs, ops, n_qubits, k, q, i, j, vector):
     for m in range(k):
         r_ki.append(test_R_k(params[m], fs[m], ops[m], n_qubits))
         print("unitaria", m)
-    r_ki.append(Pauli(ops[k][i]).to_matrix())
+    r_ki.append(P(ops[k][i]))
     print("operador", k)
     for m in range(k, N):
         print("unitaria", m)
@@ -36,7 +36,7 @@ def test_A_kqij(params, fs, ops, n_qubits, k, q, i, j, vector):
     for m in range(q):
         print("unitaria", m)
         r_qj.append(test_R_k(params[m], fs[m], ops[m], n_qubits))
-    r_qj.append(Pauli(ops[q][j]).to_matrix())
+    r_qj.append(P(ops[q][j]))
     print("operador", q)
     for m in range(q, N):
         print("unitaria", m)
@@ -52,9 +52,13 @@ def test_A_kqij(params, fs, ops, n_qubits, k, q, i, j, vector):
     return a_kqij
 
 
-def string2op(s, wires):
-    d = {"X":qml.PauliX(wires=wires),
-         "Y":qml.PauliY(wires=wires),
-         "Z":qml.PauliZ(wires=wires),
-         "I":qml.Identity(wires=wires),}
-    return d["s"]
+
+def P(s):
+    d = {"I":np.array([[1, 0], [0, 1]]) +1j*0,
+         "X":np.array([[0, 1], [1, 0]])+1j*0,
+         "Z":np.array([[1,  0], [0, -1]])+1j*0}
+    p = np.array([1])
+    for st in s:
+        # print(st)
+        p = np.kron(p, d[st])
+    return p
