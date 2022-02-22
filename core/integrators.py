@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from variational_simulation_with_v import V, A
 
-
-# TODO After the interface is complete,
-# rplace the 'many arguments' here
-def define_ode(many, arguments):
+# Returns a rutine which takes the input parameters
+# and solves the RHS of the ODE for d(theta)/dt
+def define_ode(ops, opsH, fs, hs, n_qubits):
     def ode(theta):
         # obtain M, V from theta, and the other arguments
-        M, V = # ...
+        v = V(theta, fs, hs, ops, opsH, n_qubits)
+        M = A(theta, fs, ops, n_qubits)
 
-        return np.linalg.solve(M, V)
+        return np.linalg.solve(M, v)
 
     return ode
 
