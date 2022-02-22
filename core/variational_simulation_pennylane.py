@@ -85,7 +85,6 @@ def R_k(params_k, fs_k, ops_k, n_qubits):
 
 
 def ops_ki(op, n_qubits):
-
     for m in range(n_qubits):
-        string2op(op[m], m)
+        copy(string2op(op[m], m))
         # print(string2op(op[m], m))
