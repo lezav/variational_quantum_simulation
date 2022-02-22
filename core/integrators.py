@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from variational_simulation_with_v import V, A
+from core.variational_simulation_with_v import V, A
 
 # Returns a rutine which takes the input parameters
 # and solves the RHS of the ODE for d(theta)/dt
