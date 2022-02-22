@@ -1,5 +1,5 @@
 import numpy as np
-from core.variational_simulation import A_kq, V_k
+from core.variational_simulation_with_v import A_kq, V_k
 
 n_qubits = 2
 J = 1/2

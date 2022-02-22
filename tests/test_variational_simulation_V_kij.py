@@ -4,7 +4,7 @@ from qiskit.circuit import Gate
 from qiskit.extensions import HamiltonianGate
 from qiskit.circuit.library.standard_gates import *
 from qiskit.quantum_info.operators import Operator, Pauli
-from core.variational_simulation import A_kqij, V_kij
+from core.variational_simulation_with_v import A_kqij, V_kij
 from core.utils import test_A_kqij
 
 
