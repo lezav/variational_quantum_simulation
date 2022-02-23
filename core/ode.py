@@ -18,9 +18,8 @@ def define_vqs_ode(ops, h_ops, fs, hs, state, analytic=False):
             A = analytic_vqs.A(theta, fs, ops, state)
             V = analytic_vqs.V(theta, fs, hs, ops, h_ops, state)
         else:
-            n_qubits = len(h_ops[0])
-            A = vqs.A(theta, fs, ops, n_qubits)
-            V = vqs.V(theta, fs, hs, ops, h_ops, n_qubits)
+            A = vqs.A(theta, fs, ops, state)
+            V = vqs.V(theta, fs, hs, ops, h_ops, state)
         return np.linalg.solve(A, V)
 
     return ode                  # Closure with the relevant variables

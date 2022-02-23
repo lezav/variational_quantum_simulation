@@ -7,7 +7,7 @@ from qiskit.quantum_info.operators import Operator, Pauli
 from core.variational_simulation import initial_state
 
 # create the circuit
-n_qubits = 3
+n_qubits = 2
 qr_data = QuantumRegister(n_qubits, "data") # data register
 qr_ancilla = QuantumRegister(1, "ancilla") # ancilla register
 cr = ClassicalRegister(1, "cr") # classical register
