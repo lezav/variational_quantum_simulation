@@ -2,7 +2,7 @@
 
 import numpy as np
 import core.analytic as analytic_vqs
-import core.variational_simulation_with_v as vqs
+import core.variational_simulation as vqs
 
 # Returns a rutine which takes the input parameters
 # and solves the RHS of the ODE for d(theta)/dt
