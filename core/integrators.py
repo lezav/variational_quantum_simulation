@@ -3,10 +3,11 @@
 import numpy as np
 import core.analytic as analytic_vqs
 import core.variational_simulation as vqs
+from core.utils import get_hamiltonian
 
 # Returns a rutine which takes the input parameters
 # and solves the RHS of the ODE for d(theta)/dt
-def define_ode(ops, h_ops, fs, hs, analytic=False, state=[]):
+def define_vqs_ode(ops, h_ops, fs, hs, analytic=False, state=[]):
     def ode(theta, time):
         # Possibly time-dependent hamiltonian
         nonlocal hs             # Expect from closure
@@ -25,9 +26,17 @@ def define_ode(ops, h_ops, fs, hs, analytic=False, state=[]):
 
     return ode                  # Closure with the relevant variables
 
+# Define an ODE for the Schrodinger equation
+def define_schrodinger_ode(h_ops, hs):
+    def schrodinger_ode(state, time=None):
+        H = get_hamiltonian(h_ops, hs, time)
+        return -1j * H @ state
+
+    return schrodinger_ode
+
 # 1st-order integrator on dt
 def euler(ode, x0, dt, Nt):
-    acc = np.empty((Nt, len(x0)))
+    acc = np.empty((Nt, len(x0)), dtype=type(x0[0]))
     acc[0, :] = x0
     for t in range(1, Nt):
         acc[t, :] = acc[t-1, :] + dt*ode(acc[t-1, :], dt*(t-1) )
@@ -36,7 +45,7 @@ def euler(ode, x0, dt, Nt):
 
 # 4-th order runge-kutta
 def rk4(ode, x0, dt, Nt):
-    acc = np.empty((Nt, len(x0)))
+    acc = np.empty((Nt, len(x0)), dtype=type(x0[0]))
     acc[0, :] = x0
     for n in range(1, Nt):
         tn = (n-1)*dt
