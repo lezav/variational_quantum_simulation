@@ -48,9 +48,31 @@ def test_A_kqij(params, fs, ops, n_qubits, k, q, i, j, vector):
         R_qj = r_qj[m]@R_qj
     a_kqij = (vector.conj().T) @ (((R_ki.conj().T) @ R_qj) @ vector)
     a_kqij = 1j*np.conjugate(fs[k][i])*fs[q][j]*a_kqij
-    a_kqij = (a_kqij + np.conjugate(a_kqij))
+    a_kqij = np.real(a_kqij + np.conjugate(a_kqij))
     return a_kqij
 
+
+def test_A_kq(params, fs, ops, n_qubits, k, q, vector):
+    n_k = len(fs[k])
+    n_q = len(fs[q])
+    a_kq = 0
+    for i in range(n_k):
+        for j in range(n_q):
+            a_kq += test_A_kqij(params, fs, ops, n_qubits, k, q, i, j, vector)
+    return a_kq
+
+
+def test_A(params, fs, ops, n_qubits, vector):
+    """
+    Calculate the matrix A
+    """
+    N = params.shape[0]
+    a = np.zeros((N, N))
+    for q in range(N):
+        for k in range(q+1):
+            a[k, q] = test_A_kq(params, fs, ops, n_qubits, k, q, vector)
+    a = a - a.T
+    return a
 
 
 def P(s):

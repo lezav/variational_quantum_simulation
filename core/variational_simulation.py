@@ -27,6 +27,7 @@ def A(params, fs, ops, n_qubits):
     for q in range(N):
         for k in range(q+1):
             a[k, q] = A_kq(params, fs, ops, n_qubits, k, q)
+    a = a - a.T
     return a
 
 
@@ -112,7 +113,7 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     # measure in the X basis with a number of shots
     qc.h(qr_ancilla)
     qc.measure(qr_ancilla, cr)
-    print(qc.draw())
+    # print(qc.draw())
     simulator = Aer.get_backend('aer_simulator')
     # simulator = Aer.get_backend('statevector_simulator')
     qc = transpile(qc, simulator)
