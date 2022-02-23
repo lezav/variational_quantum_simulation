@@ -8,17 +8,18 @@ from qiskit.extensions import HamiltonianGate
 from qiskit.quantum_info import Statevector
 from core.utils import parse_gate
 
+
 def initial_state(n_qubits):
     qr_data = QuantumRegister(n_qubits, "data") # data register
     qc = QuantumCircuit(qr_data)
     qc.h(qr_data[:])
     for k in range(n_qubits-1):
         qc.cp(np.pi, k, k+1)
-    qc.cp(np.pi, k + 1, 0)
+    qc.cp(np.pi, n_qubits-1, 0)
     return qc.to_gate(label="in_st")
 
 
-def A(params, fs, ops, n_qubits):
+def A(params, fs, ops, vector):
     """
     Calculate the matrix A
     """
@@ -26,12 +27,12 @@ def A(params, fs, ops, n_qubits):
     a = np.zeros((N, N))
     for q in range(N):
         for k in range(q+1):
-            a[k, q] = A_kq(params, fs, ops, n_qubits, k, q)
+            a[k, q] = A_kq(params, fs, ops, vector, k, q)
     a = a - a.T
     return a
 
 
-def A_kq(params, fs, ops, n_qubits, k, q):
+def A_kq(params, fs, ops, vector, k, q):
     """
     Calculate a term A_kq that appear in equation (21) of the paper.
     Args:
@@ -51,11 +52,11 @@ def A_kq(params, fs, ops, n_qubits, k, q):
     a_kq = 0
     for i in range(n_k):
         for j in range(n_q):
-            a_kq += A_kqij(params, fs, ops, n_qubits, k, q, i, j)
+            a_kq += A_kqij(params, fs, ops, vector, k, q, i, j)
     return a_kq
 
 
-def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
+def A_kqij(params, fs, ops, vector, k, q, i, j, shots=16384):
     """
     Calculate A_kqij = f*_ki f_qj <0|R^dagg_ki R_qj|0> that appear in Eq. (21).
     Args:
@@ -69,6 +70,7 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
         a_ij: float. Dot product of derivatives given by Eq. (10).
     """
     # We create the circuit with n_qubits plus an ancilla.
+    n_qubits = len(ops[0][0])
     qr_ancilla = QuantumRegister(1, "ancilla") # ancilla register
     qr_data = QuantumRegister(n_qubits, "data") # data register
     cr = ClassicalRegister(1, "cr") # classical register
@@ -77,7 +79,8 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     N = params.shape[0]
     a_kiqj = 2*np.abs(np.conjugate(1j*fs[k][i])*fs[q][j])
     theta_kiqj = np.angle(1j*np.conjugate(fs[k][i])*fs[q][j])
-    qc.append(initial_state(n_qubits), qr_data[:])
+    # qc.append(initial_state(n_qubits), qr_data[:])
+    qc.initialize(vector.flatten(), qr_data[:])
     qc.h(qr_ancilla)
     qc.p(theta_kiqj, qr_ancilla)
     qc.barrier()
@@ -124,18 +127,19 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     Re_0U0 = (counts.get("0", 0) - counts.get("1", 0))/shots
     return a_kiqj*Re_0U0
 
-def V(params, fs, hs, ops, opsH, n_qubits):
+
+def V(params, fs, hs, ops, opsH, vector):
     """
     Calculate the matrix A
     """
     N = params.shape[0]
     v = np.zeros(N)
     for k in range(N):
-        v[k] = V_k(params, fs, hs, ops, opsH, n_qubits, k)
+        v[k] = V_k(params, fs, hs, ops, opsH, vector, k)
     return v
 
 
-def V_k(params, fs, hs, ops, opsH, n_qubits, k):
+def V_k(params, fs, hs, ops, opsH, vector, k):
     """
     Calculate a term V_k that appear in equation (13) of the paper.
     Args:
@@ -155,11 +159,11 @@ def V_k(params, fs, hs, ops, opsH, n_qubits, k):
     v_k = 0
     for i in range(n_k):
         for j in range(n_i):
-            v_k += V_kij(params, fs, hs, ops, opsH, n_qubits, k, i, j)
+            v_k += V_kij(params, fs, hs, ops, opsH, vector, k, i, j)
     return v_k
 
 
-def V_kij(params, fs, hs, ops, opsH, n_qubits, k, i, j, shots=8192):
+def V_kij(params, fs, hs, ops, opsH, vector, k, i, j, shots=16384):
     """
     Calculate V_kij = f*_ki h_j <0|R^dagg_ki sigma_J R|0> that appear in Eq. (13).
     Args:
@@ -175,6 +179,7 @@ def V_kij(params, fs, hs, ops, opsH, n_qubits, k, i, j, shots=8192):
         v_kij: float. Dot product of derivatives given by Eq. (10).
     """
     # We create the circuit with n_qubits plus an ancilla.
+    n_qubits = len(ops[0][0])
     qr_ancilla = QuantumRegister(1, "ancilla") # ancilla register
     qr_data = QuantumRegister(n_qubits, "data") # data register
     cr = ClassicalRegister(1, "cr") # classical register
@@ -183,7 +188,8 @@ def V_kij(params, fs, hs, ops, opsH, n_qubits, k, i, j, shots=8192):
     N = params.shape[0]
     a_v_kij = 2*np.abs(np.conjugate(fs[k][i])*hs[j])
     theta_kij = np.angle(np.conjugate(fs[k][i])*hs[j])
-    qc.append(initial_state(n_qubits), qr_data[:])
+    # qc.append(initial_state(n_qubits), qr_data[:])
+    qc.initialize(vector.flatten(), qr_data[:])
     qc.h(qr_ancilla)
     qc.p(theta_kij, qr_ancilla)
     qc.barrier()

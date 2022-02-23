@@ -53,7 +53,7 @@ def test_A_kqij(params, fs, ops, n_qubits, k, q, i, j, vector):
 
 #####################################################################################################
 
-def test_V_kij(params, fs, hs, ops, opsH, n_qubits, k, i, j, vector):
+def test_V_kij(params, fs, hs, ops, opsH, vector, n_qubits, k, i, j):
     N = len(params)
     r_ki = []
     for m in range(k):
@@ -61,13 +61,13 @@ def test_V_kij(params, fs, hs, ops, opsH, n_qubits, k, i, j, vector):
     r_ki.append(Pauli(ops[k][i]).to_matrix())
     for m in range(k, N):
         r_ki.append(test_R_k(params[m], fs[m], ops[m], n_qubits))
-    
+
     r_j = []
     for m in range(N):
         r_j.append(test_R_k(params[m], fs[m], ops[m], n_qubits))
     r_j.append(Pauli(opsH[j]).to_matrix())
-    
-        
+
+
     R_ki = np.eye(2**n_qubits, 2**n_qubits) + 1j*0
     R_j = np.eye(2**n_qubits, 2**n_qubits) + 1j*0
     for m in range(N+1):
@@ -77,4 +77,3 @@ def test_V_kij(params, fs, hs, ops, opsH, n_qubits, k, i, j, vector):
     v_kij = np.conjugate(fs[k][i])*hs[j]*v_kij
     v_kij = (v_kij + np.conjugate(v_kij))
     return v_kij
-
