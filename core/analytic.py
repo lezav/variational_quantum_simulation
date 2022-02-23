@@ -8,6 +8,7 @@ base_gates = {
     "Z" : np.array([[1, 0], [0, -1]], dtype=complex),
 }
 
+# Translate a gate name to a matrix
 def parse_gate(gates : str):
     U = np.array([1])
     for gate in gates:          # Iterate over subspaces
@@ -54,7 +55,7 @@ def A_kq(theta, fs, gates, state, k, q):
 
 def A(theta, fs, gates, state):
     N = len(theta)
-    a = np.empty((N, N))
+    a = np.zeros((N, N))
     for q in range(N):
         for k in range(q+1):    # Calculate only a half
             a[k, q] = A_kq(theta, fs, gates, state, k, q)
