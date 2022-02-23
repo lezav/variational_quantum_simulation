@@ -1,6 +1,6 @@
 import numpy as np
-from core.variational_simulation import A
-from core.utils import test_A
+from core.variational_simulation import A_kq
+from core.utils import test_A_kq
 
 # n_qubits = 3
 # J = 1j*1/2
@@ -12,9 +12,11 @@ from core.utils import test_A
 #         0.35355339, -0.35355339,
 #         0.35355339, -0.35355339,
 #        -0.35355339, -0.35355339]).reshape(8, 1) +1j*0
-# a = A(params, fs, ops, n_qubits)
-# test_a = test_A(params, fs, ops, n_qubits, vector)
-# a, test_a
+# k, q = 0, 1
+# a_kq = A_kq(params, fs, ops, n_qubits, k, q)
+# a_kq_test = test_A_kq(params, fs, ops, n_qubits, k, q, vector)
+# a_kq, a_kq_test
+
 
 n_qubits = 2
 J = 1j*1/2
@@ -24,6 +26,6 @@ params = np.array([1.0, 1.0])
 ops = [["ZZ"], ["XI", "IX"]]
 k, q = 0, 1
 vector = np.array([0.5, 0.5, 0.5, 0.5]).reshape(4, 1) +1j*0
-a = A(params, fs, ops, n_qubits)
-test_a = test_A(params, fs, ops, n_qubits, vector)
-a, test_a
+a_kq = A_kq(params, fs, ops, n_qubits, k, q)
+a_kq_test = test_A_kq(params, fs, ops, n_qubits, k, q, vector)
+a_kq, a_kq_test

@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import core.analytic as analytic_vqs
+import core.variational_simulation as vqs
 
-
-# TODO After the interface is complete,
-# rplace the 'many arguments' here
-def define_ode(many, arguments):
+# Returns a rutine which takes the input parameters
+# and solves the RHS of the ODE for d(theta)/dt
+def define_ode(ops, h_ops, fs, hs, analytic=False, state=[]):
     def ode(theta):
-        # obtain M, V from theta, and the other arguments
-        M, V = # ...
+        if analytic:
+            # state = analytic.initial_state() # TODO
+            A = analytic_vqs.A(theta, fs, ops, state)
+            V = analytic_vqs.V(theta, fs, hs, ops, h_ops, state)
+        else:
+            n_qubits = len(fs[0])
+            A = vqs.A(theta, fs, ops, n_qubits)
+            V = vqs.V(theta, fs, hs, ops, h_ops, n_qubits)
+        return np.linalg.solve(A, V)
 
-        return np.linalg.solve(M, V)
-
-    return ode
+    return ode                  # Closure with the relevant variables
 
 # 1st-order integrator on dt
 def euler(ode, x0, dt, Nt):
-
     acc = np.empty((Nt, len(x0)))
     acc[0, :] = x0
     for t in range(1, Nt):

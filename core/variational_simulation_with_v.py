@@ -3,7 +3,7 @@ from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, assemble
 from qiskit import Aer, transpile
 from qiskit.circuit import Gate
 from qiskit.circuit.library.standard_gates import *
-from qiskit.quantum_info.operators import Operator, Pauli
+from qiskit.quantum_info.operators import Operator
 from qiskit.extensions import HamiltonianGate
 from qiskit.quantum_info import Statevector
 from core.utils import parse_gate
@@ -27,7 +27,7 @@ def A(params, fs, ops, n_qubits):
     for q in range(N):
         for k in range(q+1):
             a[k, q] = A_kq(params, fs, ops, n_qubits, k, q)
-    a = a - a.T
+    a =  a - a.T
     return a
 
 
@@ -89,9 +89,8 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     qc.barrier()
     # apply the controlled operation for sigma_ki
     qc.x(qr_ancilla)
-    controlled_Uk = string2U(ops[k][i], n_qubits).control(1)
-    # controlled_Uk = controlled_gates(ops[k][i], k, i, n_qubits).control(1)
-    qc.append(controlled_Uk, qr_ancilla[:] + qr_data[::-1])
+    controlled_Uk = string2U(ops[k][i], n_qubits).control(num_ctrl_qubits=1)
+    qc.append(controlled_Uk, qr_ancilla[:] + qr_data[:])
     qc.barrier()
     # apply R_k...R_N gates
     for m in range(k, q):
@@ -100,20 +99,18 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     qc.barrier()
     qc.x(qr_ancilla)
     # apply the controlled operation for sigma_qj
-    controlled_Uq = string2U(ops[q][j], n_qubits).control(1)
-    # controlled_Uq = controlled_gates(ops[q][j], q, j, n_qubits).control(1)
-    qc.append(controlled_Uq, qr_ancilla[:] + qr_data[::-1])
-    # qc.cx(qr_ancilla, qr_data[0])
+    controlled_Uq = string2U(ops[q][j], n_qubits).control(num_ctrl_qubits=1)
+    qc.append(controlled_Uq, qr_ancilla[:] + qr_data[:])
     qc.barrier()
-    # apply the operations R_q ...R_N
-    # for m in range(q, N):
-    #     R = R_k(params[m], fs[m], ops[m], n_qubits)
-    #     qc.append(R, qr_data[:])
-    # qc.barrier()
+    # apply the operations R_q ...R_1
+    for m in range(q, N):
+        R = R_k(params[m], fs[m], ops[m], n_qubits)
+        qc.append(R, qr_data[:])
+    qc.barrier()
     # measure in the X basis with a number of shots
     qc.h(qr_ancilla)
     qc.measure(qr_ancilla, cr)
-    # print(qc.draw())
+    print(qc.draw())
     simulator = Aer.get_backend('aer_simulator')
     # simulator = Aer.get_backend('statevector_simulator')
     qc = transpile(qc, simulator)
@@ -123,6 +120,11 @@ def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     #calculate a Re(e^(theta) <0|U|0>)
     Re_0U0 = (counts.get("0", 0) - counts.get("1", 0))/shots
     return a_kiqj*Re_0U0
+
+
+
+###########################################################################################################################
+
 
 def V(params, fs, hs, ops, opsH, n_qubits):
     """
@@ -223,16 +225,7 @@ def V_kij(params, fs, hs, ops, opsH, n_qubits, k, i, j, shots=8192):
     return a_v_kij*Re_0U0
 
 
-def controlled_gates(ops_ki, k, i, n_qubits):
-    qr_data = QuantumRegister(n_qubits, "data") # data register
-    qc = QuantumCircuit(qr_data)
-    if int(k)==0:
-        qc.z(qr_data[np.mod(i, 3)])
-        qc.z(qr_data[np.mod(i + 1, 3)])
-    else:
-        qc.x(qr_data[i])
-    return qc.to_gate(label=ops_ki)
-
+###########################################################################################################################
 
 def string2U(op, n_qubits):
     """
