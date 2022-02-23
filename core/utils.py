@@ -7,6 +7,7 @@ base_gates = {
     "I" : np.array([[1, 0], [0,  1]], dtype=complex),
     "X" : np.array([[0, 1], [1,  0]], dtype=complex),
     "Z" : np.array([[1, 0], [0, -1]], dtype=complex),
+    "Y" : np.array([[0, -1j], [1j, 0]], dtype=complex)
 }
 
 # Translate a gate name to a matrix
