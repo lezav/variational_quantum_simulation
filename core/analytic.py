@@ -66,7 +66,8 @@ def A(theta, fs, gates, state):
 def V_kij(theta, fs, hs, gates, h_gates, state, k, i, j):
     R = np.copy(state)
     R_ki = np.copy(state)
-    gate_ki = parse_gate(h_gates[k][i])
+    gate_ki = parse_gate(gates[k][i])
+    h_gate_i = parse_gate(h_gates[i])
     for l in range(len(theta)):
         if l == k:
             R_ki = gate_ki @ R_ki
@@ -75,7 +76,7 @@ def V_kij(theta, fs, hs, gates, h_gates, state, k, i, j):
         R_ki = U @ R_ki
 
     coefs = hs[j] * fs[k][i]
-    return 2*np.real(coefs * np.vdot(R_ki, R))
+    return 2*np.real(coefs * np.vdot(R_ki, h_gate_i @ R))
 
 def V_k(theta, fs, hs, gates, h_gates, state, k):
     s = 0.0
