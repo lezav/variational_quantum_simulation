@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from core.variational_simulation_with_v import V, A
+import core.analytic as analytic_vqs
+import core.variational_simulation as vqs
 
 # Returns a rutine which takes the input parameters
 # and solves the RHS of the ODE for d(theta)/dt
-def define_ode(ops, opsH, fs, hs, n_qubits):
+def define_ode(ops, h_ops, fs, hs, analytic=False, state=[]):
     def ode(theta):
-        # obtain M, V from theta, and the other arguments
-        v = V(theta, fs, hs, ops, opsH, n_qubits)
-        M = A(theta, fs, ops, n_qubits)
+        if analytic:
+            # state = analytic.initial_state() # TODO
+            A = analytic_vqs.A(theta, fs, ops, state)
+            V = analytic_vqs.V(theta, fs, hs, ops, h_ops, state)
+        else:
+            n_qubits = len(fs[0])
+            A = vqs.A(theta, fs, ops, n_qubits)
+            V = vqs.V(theta, fs, hs, ops, h_ops, n_qubits)
+        return np.linalg.solve(A, V)
 
-        return np.linalg.solve(M, v)
-
-    return ode
+    return ode                  # Closure with the relevant variables
 
 # 1st-order integrator on dt
 def euler(ode, x0, dt, Nt):
-
     acc = np.empty((Nt, len(x0)))
     acc[0, :] = x0
     for t in range(1, Nt):
