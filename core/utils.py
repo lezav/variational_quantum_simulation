@@ -26,20 +26,20 @@ def test_A_kqij(params, fs, ops, n_qubits, k, q, i, j, vector):
     r_ki = []
     for m in range(k):
         r_ki.append(test_R_k(params[m], fs[m], ops[m], n_qubits))
-        print("unitaria", m)
+        # print("unitaria", m)
     r_ki.append(P(ops[k][i]))
-    print("operador", k)
+    # print("operador", k)
     for m in range(k, N):
-        print("unitaria", m)
+        # print("unitaria", m)
         r_ki.append(test_R_k(params[m], fs[m], ops[m], n_qubits))
     r_qj = []
     for m in range(q):
-        print("unitaria", m)
+        # print("unitaria", m)
         r_qj.append(test_R_k(params[m], fs[m], ops[m], n_qubits))
     r_qj.append(P(ops[q][j]))
-    print("operador", q)
+    # print("operador", q)
     for m in range(q, N):
-        print("unitaria", m)
+        # print("unitaria", m)
         r_qj.append(test_R_k(params[m], fs[m], ops[m], n_qubits))
     R_ki = np.eye(2**n_qubits, 2**n_qubits) + 1j*0
     R_qj = np.eye(2**n_qubits, 2**n_qubits) + 1j*0

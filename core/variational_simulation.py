@@ -54,7 +54,7 @@ def A_kq(params, fs, ops, n_qubits, k, q):
     return a_kq
 
 
-def A_kqij_3qubits(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
+def A_kqij(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     """
     Calculate A_kqij = f*_ki f_qj <0|R^dagg_ki R_qj|0> that appear in Eq. (21).
     Args:
@@ -88,9 +88,9 @@ def A_kqij_3qubits(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     qc.barrier()
     # apply the controlled operation for sigma_ki
     qc.x(qr_ancilla)
-    # controlled_Uk = string2U(ops[k][i], n_qubits).control(1)
-    controlled_Uk = controlled_gates(ops[k][i], k, i, n_qubits).control(1)
-    qc.append(controlled_Uk, qr_ancilla[:] + qr_data[:])
+    controlled_Uk = string2U(ops[k][i], n_qubits).control(1)
+    # controlled_Uk = controlled_gates(ops[k][i], k, i, n_qubits).control(1)
+    qc.append(controlled_Uk, qr_ancilla[:] + qr_data[::-1])
     qc.barrier()
     # apply R_k...R_N gates
     for m in range(k, q):
@@ -99,9 +99,9 @@ def A_kqij_3qubits(params, fs, ops, n_qubits, k, q, i, j, shots=8192):
     qc.barrier()
     qc.x(qr_ancilla)
     # apply the controlled operation for sigma_qj
-    # controlled_Uq = string2U(ops[q][j], n_qubits).control(1)
-    controlled_Uq = controlled_gates(ops[q][j], q, j, n_qubits).control(1)
-    qc.append(controlled_Uq, qr_ancilla[:] + qr_data[:])
+    controlled_Uq = string2U(ops[q][j], n_qubits).control(1)
+    # controlled_Uq = controlled_gates(ops[q][j], q, j, n_qubits).control(1)
+    qc.append(controlled_Uq, qr_ancilla[:] + qr_data[::-1])
     # qc.cx(qr_ancilla, qr_data[0])
     qc.barrier()
     # apply the operations R_q ...R_N
@@ -141,7 +141,9 @@ def string2U(op, n_qubits):
     """
     qr_data = QuantumRegister(n_qubits, "data") # data register
     qc = QuantumCircuit(qr_data)
-    qc.unitary(Operator(P(op)), qr_data[::-1])
+    for m in range(n_qubits):
+        qc.unitary(Operator(P(op[m])), qr_data[m])
+    # qc.unitary(Operator(P(op)), qr_data[::])
     return qc.to_gate(label=op)
 
 
