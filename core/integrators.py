@@ -7,7 +7,12 @@ import core.variational_simulation as vqs
 # Returns a rutine which takes the input parameters
 # and solves the RHS of the ODE for d(theta)/dt
 def define_ode(ops, h_ops, fs, hs, analytic=False, state=[]):
-    def ode(theta):
+    def ode(theta, time):
+        # Possibly time-dependent hamiltonian
+        nonlocal hs             # Expect from closure
+        if callable(hs):
+            hs = hs(time)       # Resturn list of hamiltonian coefficients at 'time'
+
         if analytic:
             # state = analytic.initial_state() # TODO
             A = analytic_vqs.A(theta, fs, ops, state)
@@ -25,18 +30,21 @@ def euler(ode, x0, dt, Nt):
     acc = np.empty((Nt, len(x0)))
     acc[0, :] = x0
     for t in range(1, Nt):
-        acc[t, :] = acc[t-1, :] + dt*ode(acc[t-1, :])
+        acc[t, :] = acc[t-1, :] + dt*ode(acc[t-1, :], dt*(t-1) )
 
     return acc
 
-# Arbitrary order integrator on dt.
-# Requires 'order' evaluations of 'ode'
-def rungekutta(ode, x0, dt, Nt, order = 4):
+# 4-th order runge-kutta
+def rk4(ode, x0, dt, Nt):
     acc = np.empty((Nt, len(x0)))
     acc[0, :] = x0
-    for t in range(1, Nt):
-        acc[t, :] = acc[t-1, :]
-        for j in range(order, 0, -1):
-            acc[t, :] = acc[t-1, :] + ode(acc[t, :]) * dt/j
+    for n in range(1, Nt):
+        tn = (n-1)*dt
+        yn = acc[n-1, :]
+        k1 = dt * ode(yn, tn)
+        k2 = dt * ode(yn + k1/2, tn + dt/2)
+        k3 = dt * ode(yn + k2/2, tn + dt/2)
+        k4 = dt * ode(yn + k3,   tn + dt)
+        acc[n, :] = yn + (k1 + 2*k2 + 2*k3 + k4)/6
 
     return acc
