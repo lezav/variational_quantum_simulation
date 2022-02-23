@@ -13,7 +13,7 @@ def define_ode(ops, h_ops, fs, hs, analytic=False, state=[]):
             A = analytic_vqs.A(theta, fs, ops, state)
             V = analytic_vqs.V(theta, fs, hs, ops, h_ops, state)
         else:
-            n_qubits = len(fs[0])
+            n_qubits = len(h_ops[0])
             A = vqs.A(theta, fs, ops, n_qubits)
             V = vqs.V(theta, fs, hs, ops, h_ops, n_qubits)
         return np.linalg.solve(A, V)
