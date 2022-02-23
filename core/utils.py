@@ -1,86 +1,89 @@
 import numpy as np
-import scipy
-from qiskit.quantum_info.operators import Operator, Pauli
+import scipy.linalg as la
 
+# Gates which can be translated from strings to arrays
+base_gates = {
+    "I" : np.array([[1, 0], [0,  1]], dtype=complex),
+    "X" : np.array([[0, 1], [1,  0]], dtype=complex),
+    "Z" : np.array([[1, 0], [0, -1]], dtype=complex),
+}
 
-def test_R_k(params_k, fs_k, ops_k, n_qubits):
+def parse_gate(gates : str):
+    U = np.array([1])
+    for gate in gates:          # Iterate over subspaces
+        U = np.kron(U, base_gates[gate])
+    return U
+
+def R_k(theta_k : float, fs_k : list, gates_k : list):
     """
     Calculate the unitary R_k.
     Args:
-        params_k:  float. theta_k parameter in the paper.
+        theta_k:  float. theta_k parameter in the paper.
         fs_k: list. Contains the complex coefficients f_ki that appear in R_k.
-        ops_k: list. Contains the operators sigma_ki that appear in R_k.
+        gates_k: list. Contains the operators sigma_ki that appear in R_k.
     Returns:
-        R: Gate.
+        R_k: Gate.
     """
 
-    n_k = len(ops_k)
-    Ops_k = fs_k[0]*P(ops_k[0])
-    for j in range(1, n_k):
-        Ops_k += fs_k[j]*P(ops_k[j])
+    U = sum( f * parse_gate(g) for (f, g) in zip(fs_k, gates_k) )
+    return la.expm(theta_k * U)
 
-    return scipy.linalg.expm(params_k*Ops_k)
+def A_kqij(theta, fs, gates, state, k, q, i, j):
+    R_ki = np.copy(state)
+    R_qj = np.copy(state)
+    gate_ki = parse_gate(gates[k][i])
+    gate_qj = parse_gate(gates[q][j])
+    for l in range(len(theta)):
+        if l == k:
+            R_ki = gate_ki @ R_ki
+        elif l == q:
+            R_qj = gate_qj @ R_qj
+        U = R_k(theta[l], fs[l], gates[l])
+        R_ki = U @ R_ki
+        R_qj = U @ R_qj
 
-def test_A_kqij(params, fs, ops, n_qubits, k, q, i, j, vector):
-    N = len(params)
-    r_ki = []
-    for m in range(k):
-        r_ki.append(test_R_k(params[m], fs[m], ops[m], n_qubits))
-        # print("unitaria", m)
-    r_ki.append(P(ops[k][i]))
-    # print("operador", k)
-    for m in range(k, N):
-        # print("unitaria", m)
-        r_ki.append(test_R_k(params[m], fs[m], ops[m], n_qubits))
-    r_qj = []
-    for m in range(q):
-        # print("unitaria", m)
-        r_qj.append(test_R_k(params[m], fs[m], ops[m], n_qubits))
-    r_qj.append(P(ops[q][j]))
-    # print("operador", q)
-    for m in range(q, N):
-        # print("unitaria", m)
-        r_qj.append(test_R_k(params[m], fs[m], ops[m], n_qubits))
-    R_ki = np.eye(2**n_qubits, 2**n_qubits) + 1j*0
-    R_qj = np.eye(2**n_qubits, 2**n_qubits) + 1j*0
-    for m in range(N+1):
-        R_ki = r_ki[m]@R_ki
-        R_qj = r_qj[m]@R_qj
-    a_kqij = (vector.conj().T) @ (((R_ki.conj().T) @ R_qj) @ vector)
-    a_kqij = 1j*np.conjugate(fs[k][i])*fs[q][j]*a_kqij
-    a_kqij = np.real(a_kqij + np.conjugate(a_kqij))
-    return a_kqij
+    coefs = 1j * np.conj(fs[k][i]) * fs[q][j]
+    return 2*np.real( coefs * np.vdot(R_ki, R_qj) )
 
+def A_kq(theta, fs, gates, state, k, q):
+    s = 0.0
+    for i in range(len(fs[k])):
+        for j in range(len(fs[q])):
+            s += A_kqij(theta, fs, gates, state, k, q, i, j)
+    return s
 
-def test_A_kq(params, fs, ops, n_qubits, k, q, vector):
-    n_k = len(fs[k])
-    n_q = len(fs[q])
-    a_kq = 0
-    for i in range(n_k):
-        for j in range(n_q):
-            a_kq += test_A_kqij(params, fs, ops, n_qubits, k, q, i, j, vector)
-    return a_kq
-
-
-def test_A(params, fs, ops, n_qubits, vector):
-    """
-    Calculate the matrix A
-    """
-    N = params.shape[0]
-    a = np.zeros((N, N))
+def A(theta, fs, gates, state):
+    N = len(theta)
+    a = np.empty((N, N))
     for q in range(N):
-        for k in range(q+1):
-            a[k, q] = test_A_kq(params, fs, ops, n_qubits, k, q, vector)
-    a = a - a.T
-    return a
+        for k in range(q+1):    # Calculate only a half
+            a[k, q] = A_kq(theta, fs, gates, state, k, q)
 
+    return a - a.T              # Complete the other half
 
-def P(s):
-    d = {"I":np.array([[1, 0], [0, 1]]) +1j*0,
-         "X":np.array([[0, 1], [1, 0]])+1j*0,
-         "Z":np.array([[1,  0], [0, -1]])+1j*0}
-    p = np.array([1])
-    for st in s:
-        # print(st)
-        p = np.kron(p, d[st])
-    return p
+# TODO Could be combined with A_kqij to reuse R_ki
+def V_kij(theta, fs, hs, gates, h_gates, state, k, i, j):
+    R = np.copy(state)
+    R_ki = np.copy(state)
+    gate_ki = parse_gate(h_gates[k][i])
+    for l in range(len(theta)):
+        if l == k:
+            R_ki = gate_ki @ R_ki
+        U = R_k(theta[l], fs[l], gates[l])
+        R = U @ R
+        R_ki = U @ R_ki
+
+    coefs = hs[j] * fs[k][i]
+    return 2*np.real(coefs * np.vdot(R_ki, R))
+
+def V_k(theta, fs, hs, gates, h_gates, state, k):
+    s = 0.0
+    for i in range(len(fs[k])):
+        for j in range(len(hs)):
+            s += V_kij(theta, fs, hs, gates, h_gates, state, k, i, j)
+
+    return s
+
+def V(theta, fs, hs, gates, h_gates, state):
+    return np.array([ V_k(theta, fs, hs, gates, h_gates, state, k)
+                      for k in range(len(theta)) ])
