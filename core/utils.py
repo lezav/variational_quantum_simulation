@@ -15,3 +15,11 @@ def parse_gate(gates : str):
     for gate in gates:          # Iterate over subspaces
         U = np.kron(U, base_gates[gate])
     return U
+
+# Get the hamiltonian as array from h_ops and hs
+def get_hamiltonian(h_ops, hs, time=None):
+    if callable(hs):
+        assert time is not None, "If hs is callabe, you should provide the time to evaluate it"
+        hs = hs(time)
+
+    return sum( h * parse_gate(g) for (h, g) in zip(hs, h_ops) )
