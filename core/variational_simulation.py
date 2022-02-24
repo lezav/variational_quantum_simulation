@@ -328,6 +328,7 @@ def trial_state_ising(params, initial_state, fs, ops, Nt):
     for i in range(len(params[:,0])):
         Hz = R_k_matrix(params[i,0], fs[0], ops[0])
         Hx = R_k_matrix(params[i,1], fs[1], ops[1])
-        trial_state[i,:] = Hz @ Hx@ initial_state
-    normalize_trial_state = trial_state/la.norm(trial_state)
+        trial_state[i,:] = np.dot(Hx@ Hz, initial_state)
+    normalize_trial_state = trial_state/np.linalg.norm(trial_state,
+                                                       axis=1, keepdims=True)
     return normalize_trial_state
