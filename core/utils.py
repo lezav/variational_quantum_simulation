@@ -24,3 +24,11 @@ def get_hamiltonian(h_ops, hs, time=None):
         hs = hs(time)
 
     return sum( h * parse_gate(g) for (h, g) in zip(hs, h_ops) )
+
+def infidelity(stateA, stateB):
+    inf = []
+    for i in range(len(stateA)):
+        fid_i = np.abs(np.vdot(stateA[i], stateB[i]))**2.0
+        inf_i = 1.0-fid_i
+        inf.append(inf_i)
+    return inf
