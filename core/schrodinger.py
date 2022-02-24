@@ -20,8 +20,11 @@ def time_evolution(opsH, hs, dt, Nt, img=True):
 
 def state_evoluted(initial_state, opsH, hs, dt, Nt, img=True):
     n_qubits = len(opsH[0])
-    state_evoluted = np.zeros((2**n_qubits, Nt), dtype="complex")
+    state_evoluted = np.zeros((Nt, 2**n_qubits), dtype="complex")
     U = time_evolution(opsH, hs, dt, Nt, img=True)
     for n in range(Nt):
-        state_evoluted[:, n] = np.dot(U[:, :, n], initial_state)
-    return state_evoluted
+        state_evoluted[n,:] = np.dot(U[:, :, n], initial_state)
+    normalize_state_evoluted = state_evoluted/np.linalg.norm(state_evoluted,
+                                                             axis=1,
+                                                             keepdims=True)
+    return normalize_state_evoluted
