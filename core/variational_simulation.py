@@ -312,7 +312,7 @@ def R_k_matrix(params_k, fs_k, ops_k):
 
 def trial_state_ising(params, initial_state, fs, ops, Nt):
     """
-    Calculate the trial state of the form
+    Calculate the normalize trial state of the form
 
     |Psi> = e^(i*param_2*H_x)e^(i*param_1*H_z) |Phi(0)>.
 
@@ -329,4 +329,5 @@ def trial_state_ising(params, initial_state, fs, ops, Nt):
         Hz = R_k_matrix(params[i,0], fs[0], ops[0])
         Hx = R_k_matrix(params[i,1], fs[1], ops[1])
         trial_state[i,:] = Hz @ Hx@ initial_state
-    return trial_state
+    normalize_trial_state = trial_state/la.norm(trial_state)
+    return normalize_trial_state
