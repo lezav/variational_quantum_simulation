@@ -269,3 +269,19 @@ def R_k(params_k, fs_k, ops_k, n_qubits):
         Ops_k += fs_k[j]*Operator(parse_gate(ops_k[j]))
 
     return HamiltonianGate(1j*Ops_k , params_k, label="+".join(ops_k))
+
+
+def trial_state_ising(params, initial_state, ops):
+    # FALTA GENERALIZAR LA UNITARIA ANTES DEL ESTADO INICIAL
+    # params array de dimensión (Nt, número de parámetro)
+    n_qubits = len(ops[0][0])
+    if n_qubits == 2:
+        Hx = - 0.5*( parse_gate(ops[1][0])+parse_gate(ops[1][1]))
+        Hz = -(parse_gate(ops[0][0]))
+    elif n_qubits == 3:
+        Hx = - 0.5*( parse_gate(ops[1][0])+parse_gate(ops[1][1])+parse_gate(ops[1][2]))
+        Hz = -0.5*( parse_gate(ops[0][0])+parse_gate(ops[0][1])+parse_gate(ops[0][2]))
+    state = np.zeros((Nt, 2**n_qubits),  dtype="complex")
+    for i in range(len(params[:,0])):
+        state[i,:] = la.expm(1j*params[i,0]*Hx)@ la.expm(1j*params[i,1]*Hz) @ initial_state
+    return state
