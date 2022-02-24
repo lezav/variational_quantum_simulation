@@ -54,7 +54,7 @@ def A_kq(params, fs, ops, vector, k, q):
     Returns:
         a_qk: float. Eq. (21).
     """
-    
+
     # select the elements from the lists
     n_k = len(fs[k])
     n_q = len(fs[q])
@@ -97,7 +97,7 @@ def A_kqij(params, fs, ops, vector, k, q, i, j, shots=16384):
     # Now we want to construct R_ki
     # apply R_1 ...R_k-1 gates
     for m in range(k):
-        R = R_k(params[m], fs[m], ops[m], n_qubits)
+        R = R_k(params[m], fs[m], ops[m])
         qc.append(R, qr_data[:])
     qc.barrier()
     # apply the controlled operation for sigma_ki
@@ -107,7 +107,7 @@ def A_kqij(params, fs, ops, vector, k, q, i, j, shots=16384):
     qc.barrier()
     # apply R_k...R_N gates
     for m in range(k, q):
-        R = R_k(params[m], fs[m], ops[m], n_qubits)
+        R = R_k(params[m], fs[m], ops[m])
         qc.append(R, qr_data[:])
     qc.barrier()
     qc.x(qr_ancilla)
@@ -212,7 +212,7 @@ def V_kij(params, fs, hs, ops, opsH, vector, k, i, j, shots=16384):
     # Now we want to construct R_ki
     # apply R_1 ...R_k-1 gates
     for m in range(k):
-        R = R_k(params[m], fs[m], ops[m], n_qubits)
+        R = R_k(params[m], fs[m], ops[m])
         qc.append(R, qr_data[:])
     qc.barrier()
     # apply the controlled operation for sigma_ki
@@ -222,7 +222,7 @@ def V_kij(params, fs, hs, ops, opsH, vector, k, i, j, shots=16384):
     qc.barrier()
     # apply R_k...R_N gates
     for m in range(k, N):
-        R = R_k(params[m], fs[m], ops[m], n_qubits)
+        R = R_k(params[m], fs[m], ops[m])
         qc.append(R, qr_data[:])
     qc.barrier()
     qc.x(qr_ancilla)
@@ -275,14 +275,13 @@ def string2U(op):
     return gate
 
 
-def R_k(params_k, fs_k, ops_k, n_qubits):
+def R_k(params_k, fs_k, ops_k):
     """
     Calculate the unitary R_k.
     Args:
         params_k:  float. lambda_k parameter in the paper.
         fs_k: list. Contains the complex coefficients f_ki that appear in R_k.
         ops_k: list. Contains the operators sigma_ki that appear in R_k.
-        n_qubits: int. Number of qubits of the system.
     Returns:
         r_k: Gate.
     """
@@ -294,18 +293,40 @@ def R_k(params_k, fs_k, ops_k, n_qubits):
     r_k = HamiltonianGate(1j*Ops_k , params_k, label="+".join(ops_k))
     return r_k
 
+def R_k_matrix(params_k, fs_k, ops_k):
+    """
+    Calculate the unitary R_k.
+    Args:
+        params_k:  float. lambda_k parameter in the paper.
+        fs_k: list. Contains the complex coefficients f_ki that appear in R_k.
+        ops_k: list. Contains the operators sigma_ki that appear in R_k.
+    Returns:
+        r_k: Array.
+    """
+    n_k = len(ops_k)
+    Ops_k = fs_k[0]*parse_gate(ops_k[0])
+    for j in range(1, n_k):
+        Ops_k += fs_k[j]*parse_gate(ops_k[j])
+    r_k = la.expm(1j*Ops_k *params_k)
+    return r_k
 
-def trial_state_ising(params, initial_state, ops, Nt):
-    # FALTA GENERALIZAR LA UNITARIA ANTES DEL ESTADO INICIAL
-    # params array de dimensión (Nt, número de parámetro)
+def trial_state_ising(params, initial_state, fs, ops, Nt):
+    """
+    Calculate the trial state of the form
+
+    |Psi> = e^(i*param_2*H_x)e^(i*param_1*H_z) |Phi(0)>.
+
+    Args:
+        params_k:  float. lambda_k parameter in the paper.
+        fs: list. Contains the complex coefficients f that appear in R.
+        ops: list. Contains the operators sigma that appear in R.
+    Returns:
+        trial_state: Array.
+    """
     n_qubits = len(ops[0][0])
-    if n_qubits == 2:
-        Hx = - 0.5*( parse_gate(ops[1][0])+parse_gate(ops[1][1]))
-        Hz = -(parse_gate(ops[0][0]))
-    elif n_qubits == 3:
-        Hx = - 0.5*( parse_gate(ops[1][0])+parse_gate(ops[1][1])+parse_gate(ops[1][2]))
-        Hz = -0.5*( parse_gate(ops[0][0])+parse_gate(ops[0][1])+parse_gate(ops[0][2]))
-    state = np.zeros((Nt, 2**n_qubits),  dtype="complex")
+    trial_state = np.zeros((Nt, 2**n_qubits),  dtype="complex")
     for i in range(len(params[:,0])):
-        state[i,:] = la.expm(1j*params[i,0]*Hx)@ la.expm(1j*params[i,1]*Hz) @ initial_state
-    return state
+        Hz = R_k_matrix(params[i,0], fs[0], ops[0])
+        Hx = R_k_matrix(params[i,1], fs[1], ops[1])
+        trial_state[i,:] = Hz @ Hx@ initial_state
+    return trial_state

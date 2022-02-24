@@ -21,7 +21,7 @@ operators = [["ZZI", "IZZ", "ZIZ"], ["XII", "IXI", "IIX"]]
 param = np.array([1.0, 1.0])
 # calculate the operation R_k
 k = 1
-R = R_k(param[0], fs[k], operators[k], n_qubits)
+R = R_k(param[0], fs[k], operators[k])
 R_test = test_R_k(param[0], fs[k], operators[k], n_qubits)
 qc.append(R, qr_data[:])
 # print(qc.draw())
