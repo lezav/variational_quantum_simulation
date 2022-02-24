@@ -314,10 +314,10 @@ def trial_state_ising(params, initial_state, fs, ops, Nt):
     """
     Calculate the normalize trial state of the form
 
-    |Psi> = e^(i*param_2*H_x)e^(i*param_1*H_z) |Phi(0)>.
+    |Psi> = e^(i*lambda_2*H_x)e^(i*lambda_1*H_z) |Phi(0)>.
 
     Args:
-        params_k:  float. lambda_k parameter in the paper.
+        params_k:  array. lambda_k evoluted parameter.
         fs: list. Contains the complex coefficients f that appear in R.
         ops: list. Contains the operators sigma that appear in R.
     Returns:
