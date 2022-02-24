@@ -7,6 +7,7 @@ from qiskit.quantum_info.operators import Operator, Pauli
 from qiskit.extensions import HamiltonianGate
 from qiskit.quantum_info import Statevector
 from core.utils import parse_gate
+import scipy.linalg as la
 
 
 def initial_state(n_qubits):
@@ -271,7 +272,7 @@ def R_k(params_k, fs_k, ops_k, n_qubits):
     return HamiltonianGate(1j*Ops_k , params_k, label="+".join(ops_k))
 
 
-def trial_state_ising(params, initial_state, ops):
+def trial_state_ising(params, initial_state, ops, Nt):
     # FALTA GENERALIZAR LA UNITARIA ANTES DEL ESTADO INICIAL
     # params array de dimensión (Nt, número de parámetro)
     n_qubits = len(ops[0][0])
