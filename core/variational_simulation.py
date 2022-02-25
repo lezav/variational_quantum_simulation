@@ -7,6 +7,7 @@ from qiskit.extensions import HamiltonianGate
 from core.utils import parse_gate
 import scipy.linalg as la
 
+backend_simulator = Aer.get_backend('aer_simulator')
 
 def initial_state(n_qubits):
     qr_data = QuantumRegister(n_qubits, "data") # data register
@@ -18,7 +19,7 @@ def initial_state(n_qubits):
     return qc.to_gate(label="in_st")
 
 
-def A(params, fs, ops, vector, shots=2**13, backend=Aer.get_backend('aer_simulator')):
+def A(params, fs, ops, vector, shots=2**13, backend=backend_simulator):
     """
     Calculate the matrix M from the 2017 paper.
     Args:
@@ -40,7 +41,7 @@ def A(params, fs, ops, vector, shots=2**13, backend=Aer.get_backend('aer_simulat
     return a
 
 
-def A_kq(params, fs, ops, vector, k, q, shots=2**13, backend=Aer.get_backend('aer_simulator')):
+def A_kq(params, fs, ops, vector, k, q, shots=2**13, backend=backend_simulator):
     """
     Calculate a term A_kq that appear in equation (12) of the 2017 paper.
     Args:
@@ -65,7 +66,7 @@ def A_kq(params, fs, ops, vector, k, q, shots=2**13, backend=Aer.get_backend('ae
     return a_kq
 
 
-def A_kqij(params, fs, ops, vector, k, q, i, j, shots=16384, backend=Aer.get_backend('aer_simulator')):
+def A_kqij(params, fs, ops, vector, k, q, i, j, shots=16384, backend=backend_simulator):
     """
     Calculate A_kqij = f*_ki f_qj <0|R^dagg_ki R_qj|0> that appear in Eq. (21).
     Args:
@@ -135,7 +136,7 @@ def A_kqij(params, fs, ops, vector, k, q, i, j, shots=16384, backend=Aer.get_bac
     return a_kiqj*Re_0U0
 
 
-def V(params, fs, hs, ops, opsH, vector, shots=2**13, backend=Aer.get_backend('aer_simulator')):
+def V(params, fs, hs, ops, opsH, vector, shots=2**13, backend=backend_simulator):
     """
     Calculate the matrix V from the 2017 paper.
     Args:
@@ -158,7 +159,7 @@ def V(params, fs, hs, ops, opsH, vector, shots=2**13, backend=Aer.get_backend('a
     return v
 
 
-def V_k(params, fs, hs, ops, opsH, vector, k, shots=2**13, backend=Aer.get_backend('aer_simulator')):
+def V_k(params, fs, hs, ops, opsH, vector, k, shots=2**13, backend=backend_simulator):
     """
     Calculate a term V_k that appear in equation (13) of the paper.
     Args:
@@ -184,7 +185,7 @@ def V_k(params, fs, hs, ops, opsH, vector, k, shots=2**13, backend=Aer.get_backe
     return v_k
 
 
-def V_kij(params, fs, hs, ops, opsH, vector, k, i, j, shots=2**13, backend=Aer.get_backend('aer_simulator')):
+def V_kij(params, fs, hs, ops, opsH, vector, k, i, j, shots=2**13, backend=backend_simulator):
     """
     Calculate V_kij = f*_ki h_j <0|R^dagg_ki sigma_J R|0>  in Eq. (13).
     Args:
