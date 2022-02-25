@@ -16,16 +16,15 @@ def main( backend, user_messenger, shots, dt, Nt ):
 
     J = 1/2
     B = 1/2
-    fs = [[-1j*J], [-1j*B, -1j*B]]
-    params_init = np.array([1.0, 1.0])
-    ops = [["ZZ"], ["XI", "IX"]]
-    # |00> + |01> + |10> + |11>
-    hs = [-J, -B, -B] # Hamiltonian non-dependent on time
+    fs = [[-1j*J,-1j*J,-1j*J], [-1j*B, -1j*B, -1j*B]]
+    params_init = np.array([1.0, 1.0, 1.0])
+    ops = [["ZZI","IZZ","ZIZ"], ["XII", "IXI", "IIX"]]
+    hs = [-J, -J, -J, -B, -B, -B] # Hamiltonian non-dependent on time
     # hs = lambda t: [-2*J*np.cos(t), -B*np.cos(t), -B*np.sin(t)] # Hamiltonian parameters dependent on time # FAKE DATA FTW
-
-    opsH = ["ZZ", "XI", "IX"]
+    opsH = ["ZZI","IZZ","ZIZ","XII", "IXI", "IIX"]
     
-    state = np.ones(4, dtype=complex)/2
+    state = np.array([0.35355339,  0.35355339, 0.35355339, -0.35355339,
+                    0.35355339, -0.35355339, -0.35355339, -0.35355339])+1j*0
 
     ode = define_vqs_ode(ops, opsH, fs, hs, state, analytic=False, shots=shots, backend=backend)    # Define the diff. equation RHS as a function of the parameters
 
