@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import core.analytic as analytic_vqs
-import core.variational_simulation as vqs
-from core.utils import get_hamiltonian
+import varqus.analytic as analytic_vqs
+import varqus.variational_simulation as vqs
+from varqus.utils import get_hamiltonian
 
 # Returns a rutine which takes the input parameters
 # and solves the RHS of the ODE for d(theta)/dt
-def define_vqs_ode(ops, h_ops, fs, hs, state, analytic=False, shots=None, backend=vqs.backend_simulator):
+def define_vqs_ode(ops, h_ops, fs, hs, state, shots=None, backend=vqs.backend_simulator):
     def ode(theta, time):
         # Possibly time-dependent hamiltonian
         nonlocal hs             # Expect from closure
         if callable(hs):
             hs = hs(time)       # Resturn list of hamiltonian coefficients at 'time'
 
-        if analytic:
+        if backend == 'analytic':
+            assert shots is None, "If backend is 'analytic', you can't provide the number of shots"
             A = analytic_vqs.A(theta, fs, ops, state)
             V = analytic_vqs.V(theta, fs, hs, ops, h_ops, state)
         else:
-            assert shots is not None, "To run in a circuit, you should provide the number of shots"
+            assert shots is not None, "To run in a backend, you should provide the number of shots"
             A = vqs.A(theta, fs, ops, state, shots, backend)
             V = vqs.V(theta, fs, hs, ops, h_ops, state, shots, backend)
         return np.linalg.solve(A, V)

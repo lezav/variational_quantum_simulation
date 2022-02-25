@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.linalg as la
-from core.utils import parse_gate
+from varqus.utils import parse_gate
 
 def R_k(theta_k : float, fs_k : list, gates_k : list):
     """
@@ -49,7 +49,6 @@ def A(theta, fs, gates, state):
 
     return a - a.T              # Complete the other half
 
-# TODO Could be combined with A_kqij to reuse R_ki
 def V_kij(theta, fs, hs, gates, h_gates, state, k, i, j):
     R = np.copy(state.reshape(-1, 1))
     R_ki = np.copy(state.reshape(-1, 1))

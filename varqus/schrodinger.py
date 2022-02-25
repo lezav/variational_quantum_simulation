@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.linalg as la
-from core.utils import parse_gate
+from varqus.utils import parse_gate
 
 
 def time_evolution(opsH, hs, dt, Nt, img=True):

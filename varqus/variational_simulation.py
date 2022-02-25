@@ -1,12 +1,13 @@
 import numpy as np
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, assemble
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit import Aer, transpile
 from qiskit.circuit.library.standard_gates import *
 from qiskit.quantum_info.operators import Operator
 from qiskit.extensions import HamiltonianGate
-from core.utils import parse_gate
+from varqus.utils import parse_gate
 import scipy.linalg as la
 
+# Default vqs backend is the Aer simulator
 backend_simulator = Aer.get_backend('aer_simulator')
 
 def initial_state(n_qubits):

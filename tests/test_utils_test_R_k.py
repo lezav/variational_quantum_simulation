@@ -1,11 +1,5 @@
 import numpy as np
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, assemble
-from qiskit.circuit import Gate
-from qiskit.extensions import HamiltonianGate
-from qiskit.circuit.library.standard_gates import *
-from qiskit.quantum_info.operators import Operator, Pauli
-from core.variational_simulation import R_k
-from core.utils import test_R_k
+from varqus.analytic import R_k
 import scipy
 
 
@@ -24,6 +18,6 @@ ZIZ = np.kron(Z, np.kron(I, Z))
 param = np.array([1.0, 1.0])
 # calculate the operation R_k
 k = 0
-R_test = test_R_k(param[k], fs[k], operators[k], n_qubits)
+R_test = R_k(param[k], fs[k], operators[k])
 H_Z = fs[k][0]*ZZI + fs[k][1]*IZZ + fs[k][2]*ZIZ
 scipy.linalg.expm(param[k]*H_Z) - R_test
