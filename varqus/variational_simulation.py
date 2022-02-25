@@ -299,26 +299,3 @@ def R_k(params_k, fs_k, ops_k):
         Ops_k += fs_k[j]*Operator(parse_gate(ops_k[j]))
     r_k = HamiltonianGate(1j*Ops_k , params_k, label="+".join(ops_k))
     return r_k
-
-def trial_state_ising(params, initial_state, fs, ops, Nt):
-    """
-    Calculate the normalize trial state of the form
-
-    |Psi> = e^(i*lambda_2*H_x)e^(i*lambda_1*H_z) |Phi(0)>.
-
-    Args:
-        params_k:  array. lambda_k evoluted parameter.
-        fs: list. Contains the complex coefficients f that appear in R.
-        ops: list. Contains the operators sigma that appear in R.
-    Returns:
-        trial_state: Array.
-    """
-    n_qubits = len(ops[0][0])
-    trial_state = np.zeros((Nt, 2**n_qubits),  dtype="complex")
-    for i in range(len(params[:,0])):
-        Hz = R_k(params[i,0], fs[0], ops[0]).to_matrix()
-        Hx = R_k(params[i,1], fs[1], ops[1]).to_matrix()
-        trial_state[i,:] = np.dot(Hx@ Hz, initial_state)
-    normalize_trial_state = trial_state/np.linalg.norm(trial_state,
-                                                       axis=1, keepdims=True)
-    return normalize_trial_state
