@@ -299,23 +299,6 @@ def R_k(params_k, fs_k, ops_k):
     r_k = HamiltonianGate(1j*Ops_k , params_k, label="+".join(ops_k))
     return r_k
 
-def R_k_matrix(params_k, fs_k, ops_k):
-    """
-    Calculate the unitary R_k.
-    Args:
-        params_k:  float. lambda_k parameter in the paper.
-        fs_k: list. Contains the complex coefficients f_ki that appear in R_k.
-        ops_k: list. Contains the operators sigma_ki that appear in R_k.
-    Returns:
-        r_k: Array.
-    """
-    n_k = len(ops_k)
-    Ops_k = fs_k[0]*parse_gate(ops_k[0])
-    for j in range(1, n_k):
-        Ops_k += fs_k[j]*parse_gate(ops_k[j])
-    r_k = la.expm(1j*Ops_k *params_k)
-    return r_k
-
 def trial_state_ising(params, initial_state, fs, ops, Nt):
     """
     Calculate the normalize trial state of the form
@@ -332,8 +315,8 @@ def trial_state_ising(params, initial_state, fs, ops, Nt):
     n_qubits = len(ops[0][0])
     trial_state = np.zeros((Nt, 2**n_qubits),  dtype="complex")
     for i in range(len(params[:,0])):
-        Hz = R_k_matrix(params[i,0], fs[0], ops[0])
-        Hx = R_k_matrix(params[i,1], fs[1], ops[1])
+        Hz = R_k(params[i,0], fs[0], ops[0]).to_matrix()
+        Hx = R_k(params[i,1], fs[1], ops[1]).to_matrix()
         trial_state[i,:] = np.dot(Hx@ Hz, initial_state)
     normalize_trial_state = trial_state/np.linalg.norm(trial_state,
                                                        axis=1, keepdims=True)
