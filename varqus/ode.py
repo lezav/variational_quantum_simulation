@@ -10,9 +10,12 @@ from varqus.utils import get_hamiltonian
 def define_vqs_ode(ops, h_ops, fs, hs, state, shots=None, backend=vqs.backend_simulator):
     def ode(theta, time):
         # Possibly time-dependent hamiltonian
-        nonlocal hs             # Expect from closure
+        nonlocal hs, state      # Expect from closure
         if callable(hs):
             hs = hs(time)       # Resturn list of hamiltonian coefficients at 'time'
+
+        # Ensure state normalization
+        state = state / np.linalg.norm(state)
 
         if backend == 'analytic':
             assert shots is None, "If backend is 'analytic', you can't provide the number of shots"
