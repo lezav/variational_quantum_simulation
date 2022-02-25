@@ -24,10 +24,3 @@ def get_hamiltonian(h_ops, hs, time=None):
         hs = hs(time)
 
     return sum( h * parse_gate(g) for (h, g) in zip(hs, h_ops) )
-
-def state_infidelity(state1, state2):
-    s1 = state1 / np.linalg.norm(state1)
-    s2 = state2 / np.linalg.norm(state2)
-    fidelity = np.abs( np.vdot(s1, s2) )**2
-
-    return 1 - fidelity
