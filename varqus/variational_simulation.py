@@ -1,12 +1,13 @@
 import numpy as np
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, assemble
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit import Aer, transpile
 from qiskit.circuit.library.standard_gates import *
 from qiskit.quantum_info.operators import Operator
 from qiskit.extensions import HamiltonianGate
-from core.utils import parse_gate
+from varqus.utils import parse_gate
 import scipy.linalg as la
 
+# Default vqs backend is the Aer simulator
 backend_simulator = Aer.get_backend('aer_simulator')
 
 def initial_state(n_qubits):
@@ -299,6 +300,8 @@ def R_k(params_k, fs_k, ops_k):
     r_k = HamiltonianGate(1j*Ops_k , params_k, label="+".join(ops_k))
     return r_k
 
+# TODO: rm.
+# It's the same as analytic.R_k, esxept for a 1j factor in the exponential
 def R_k_matrix(params_k, fs_k, ops_k):
     """
     Calculate the unitary R_k.
