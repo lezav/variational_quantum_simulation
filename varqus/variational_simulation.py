@@ -10,19 +10,10 @@ import scipy.linalg as la
 # Default vqs backend is the Aer simulator
 backend_simulator = Aer.get_backend('aer_simulator')
 
-def initial_state(n_qubits):
-    qr_data = QuantumRegister(n_qubits, "data") # data register
-    qc = QuantumCircuit(qr_data)
-    qc.h(qr_data[:])
-    for k in range(n_qubits-1):
-        qc.cp(np.pi, k, k+1)
-    qc.cp(np.pi, n_qubits-1, 0)
-    return qc.to_gate(label="in_st")
-
 
 def A(params, fs, ops, vector, shots=2**13, backend=backend_simulator):
     """
-    Calculate the matrix M from the 2017 paper.
+    Calculate the matrix M from https://doi.org/10.1103/PhysRevX.7.021050
     Args:
         params:  array (N,). lambda_k parameters in the paper.
         fs: list (N). List that contain N lists. The inner lists contain the
@@ -30,8 +21,10 @@ def A(params, fs, ops, vector, shots=2**13, backend=backend_simulator):
         ops: list (N). List that contain N lists. The inner lists contain
             the operators sigma_ki.
         vector: array. Initial state of the system.
+        shots: int. Number of shots that we want to simulate.
+        backend: backend from Qiskit.
     Returns:
-        a: array (N, N). Matrix a
+        a: array (N, N). Matrix M
     """
     N = params.shape[0]
     a = np.zeros((N, N))
@@ -44,7 +37,8 @@ def A(params, fs, ops, vector, shots=2**13, backend=backend_simulator):
 
 def A_kq(params, fs, ops, vector, k, q, shots=2**13, backend=backend_simulator):
     """
-    Calculate a term A_kq that appear in equation (12) of the 2017 paper.
+    Calculate a term A_kq that appear in equation (12) of
+    https://doi.org/10.1103/PhysRevX.7.021050
     Args:
         params:  array (N,). lambda_k parameters in the paper.
         fs: list (N). List that contain N lists. The inner lists contain the
@@ -53,10 +47,11 @@ def A_kq(params, fs, ops, vector, k, q, shots=2**13, backend=backend_simulator):
             the operators sigma_ki.
         vector: array. Initial state of the system.
         k, q: int. params for which we want to calculate A_kq.
+        shots: int. Number of shots that we want to simulate.
+        backend: backend from Qiskit.
     Returns:
-        a_qk: float. Eq. (21).
+        a_qk: float. M_kQ in Eq. (12).
     """
-
     # select the elements from the lists
     n_k = len(fs[k])
     n_q = len(fs[q])
@@ -69,7 +64,7 @@ def A_kq(params, fs, ops, vector, k, q, shots=2**13, backend=backend_simulator):
 
 def A_kqij(params, fs, ops, vector, k, q, i, j, shots=16384, backend=backend_simulator):
     """
-    Calculate A_kqij = f*_ki f_qj <0|R^dagg_ki R_qj|0> that appear in Eq. (21).
+    Calculate A_kqij = i f*_ki f_qj <0|R^dagg_ki R_qj|0> that appear in Eq. (12).
     Args:
         params:  array (N,). lambda_k parameters in the paper.
         fs: list (N). List that contain N lists. The inner lists contain the
@@ -77,10 +72,11 @@ def A_kqij(params, fs, ops, vector, k, q, i, j, shots=16384, backend=backend_sim
         ops: list (N). List that contain N lists. The inner lists contain
             the operators sigma_ki.
         k, q, i, j: int. params for which we want to calculate A_kqij.
+        shots: int. Number of shots that we want to simulate.
+        backend: backend from Qiskit.
     Returns:
-        a_ij: float. Dot product of derivatives given by Eq. (10).
+        float. Dot product of derivatives given by Eq. (12).
     """
-
     # We create the circuit with n_qubits plus an ancilla.
     n_qubits = len(ops[0][0])
     qr_ancilla = QuantumRegister(1, "ancilla") # ancilla register
@@ -90,7 +86,6 @@ def A_kqij(params, fs, ops, vector, k, q, i, j, shots=16384, backend=backend_sim
     # preparate the ancilla in the state |0> + e^(theta)|1>
     a_kiqj = 2*np.abs(np.conjugate(1j*fs[k][i])*fs[q][j])
     theta_kiqj = np.angle(1j*np.conjugate(fs[k][i])*fs[q][j])
-    # qc.append(initial_state(n_qubits), qr_data[:])
     qc.initialize(vector.flatten(), qr_data[:])
     qc.h(qr_ancilla)
     qc.p(theta_kiqj, qr_ancilla)
@@ -104,7 +99,6 @@ def A_kqij(params, fs, ops, vector, k, q, i, j, shots=16384, backend=backend_sim
     # apply the controlled operation for sigma_ki
     qc.x(qr_ancilla)
     controlled_Uk = string2U(ops[k][i]).control(1)
-    # controlled_Uk = controlled_gates(ops[k][i], k, i, n_qubits).control(1)
     qc.append(controlled_Uk, qr_ancilla[:] + qr_data[::-1])
     qc.barrier()
     # apply R_k...R_N gates
@@ -115,21 +109,12 @@ def A_kqij(params, fs, ops, vector, k, q, i, j, shots=16384, backend=backend_sim
     qc.x(qr_ancilla)
     # apply the controlled operation for sigma_qj
     controlled_Uq = string2U(ops[q][j]).control(1)
-    # controlled_Uq = controlled_gates(ops[q][j], q, j, n_qubits).control(1)
     qc.append(controlled_Uq, qr_ancilla[:] + qr_data[::-1])
-    # qc.cx(qr_ancilla, qr_data[0])
     qc.barrier()
-    # apply the operations R_q ...R_N
-    # for m in range(q, N):
-    #     R = R_k(params[m], fs[m], ops[m], n_qubits)
-    #     qc.append(R, qr_data[:])
-    # qc.barrier()
     # measure in the X basis with a number of shots
     qc.h(qr_ancilla)
     qc.measure(qr_ancilla, cr)
-    # print(qc.draw())
     qc = transpile(qc, backend)
-    # print(circ.draw())
     result = backend.run(qc, shots=shots).result()
     counts = result.get_counts(qc)
     #calculate a Re(e^(theta) <0|U|0>)
@@ -139,7 +124,7 @@ def A_kqij(params, fs, ops, vector, k, q, i, j, shots=16384, backend=backend_sim
 
 def V(params, fs, hs, ops, opsH, vector, shots=2**13, backend=backend_simulator):
     """
-    Calculate the matrix V from the 2017 paper.
+    Calculate the matrix V from https://doi.org/10.1103/PhysRevX.7.021050
     Args:
         params:  array (N,). lambda_k parameters in the paper.
         fs: list (N). List that contain N lists. The inner lists contain the
@@ -149,10 +134,11 @@ def V(params, fs, hs, ops, opsH, vector, shots=2**13, backend=backend_simulator)
             the operators sigma_ki.
         opsH: list (N). Contains the operators sigma_j.
         vector: array. Initial state of the system.
+        shots: int. Number of shots that we want to simulate.
+        backend: backend from Qiskit.
     Returns:
         v: array (N, ). Vector V
     """
-
     N = params.shape[0]
     v = np.zeros(N)
     for k in range(N):
@@ -173,10 +159,11 @@ def V_k(params, fs, hs, ops, opsH, vector, k, shots=2**13, backend=backend_simul
         opsH: list (N). Contains the operators sigma_j.
         vector: array. Initial state of the system.
         k: int. params for which we want to calculate V_k.
+        shots: int. Number of shots that we want to simulate.
+        backend: backend from Qiskit.
     Returns:
-        v_k: float. Eq. (13).
+        v_k: float. V_k in Eq. (13).
     """
-
     n_k = len(fs[k])
     n_i = len(hs)
     v_k = 0.0
@@ -199,10 +186,11 @@ def V_kij(params, fs, hs, ops, opsH, vector, k, i, j, shots=2**13, backend=backe
         opsH: list (N). Contains the operators sigma_j.
         vector: array. Initial state of the system.
         k, i, j: int. params for which we want to calculate V_kij.
+        shots: int. Number of shots that we want to simulate.
+        backend: backend from Qiskit.
     Returns:
-        v_kij: float. f*_ki h_j <0|R^dagg_ki sigma_J R|0> in Eq. 10.
+        v_kij: float. f*_ki h_j <0|R^dagg_ki sigma_J R|0> in Eq. 13.
     """
-
     # We create the circuit with n_qubits plus an ancilla.
     n_qubits = len(ops[0][0])
     qr_ancilla = QuantumRegister(1, "ancilla") # ancilla register
@@ -213,7 +201,6 @@ def V_kij(params, fs, hs, ops, opsH, vector, k, i, j, shots=2**13, backend=backe
     N = params.shape[0]
     a_v_kij = 2*np.abs(np.conjugate(fs[k][i])*hs[j])
     theta_kij = np.angle(np.conjugate(fs[k][i])*hs[j])
-    # qc.append(initial_state(n_qubits), qr_data[:])
     qc.initialize(vector.flatten(), qr_data[:])
     qc.h(qr_ancilla)
     qc.p(theta_kij, qr_ancilla)
@@ -242,25 +229,12 @@ def V_kij(params, fs, hs, ops, opsH, vector, k, i, j, shots=2**13, backend=backe
     # measure in the X basis with a number of shots
     qc.h(qr_ancilla)
     qc.measure(qr_ancilla, cr)
-    # print(qc.draw())
     qc = transpile(qc, backend)
-    # print(circ.draw())
     result = backend.run(qc, shots=shots).result()
     counts = result.get_counts(qc)
     #calculate a Re(e^(theta) <0|U|0>)
     Re_0U0 = (counts.get("0", 0) - counts.get("1", 0))/shots
     return a_v_kij*Re_0U0
-
-
-def controlled_gates(ops_ki, k, i, n_qubits):
-    qr_data = QuantumRegister(n_qubits, "data") # data register
-    qc = QuantumCircuit(qr_data)
-    if int(k)==0:
-        qc.z(qr_data[np.mod(i, 3)])
-        qc.z(qr_data[np.mod(i + 1, 3)])
-    else:
-        qc.x(qr_data[i])
-    return qc.to_gate(label=ops_ki)
 
 
 def string2U(op):
@@ -272,7 +246,6 @@ def string2U(op):
         gate: gate. Gate associated to op.
 
     """
-
     n_qubits = len(op)
     qr_data = QuantumRegister(n_qubits, "data") # data register
     qc = QuantumCircuit(qr_data)
@@ -284,7 +257,8 @@ def string2U(op):
 
 def R_k(params_k, fs_k, ops_k):
     """
-    Calculate the unitary R_k.
+    Calculate a unitary R_k(lambda_k) that we see in Eq. (7) from the paper
+    https://doi.org/10.1103/PhysRevX.7.021050
     Args:
         params_k:  float. lambda_k parameter in the paper.
         fs_k: list. Contains the complex coefficients f_ki that appear in R_k.
@@ -292,7 +266,6 @@ def R_k(params_k, fs_k, ops_k):
     Returns:
         r_k: Gate.
     """
-
     n_k = len(ops_k)
     Ops_k = fs_k[0]*Operator(parse_gate(ops_k[0]))
     for j in range(1, n_k):
